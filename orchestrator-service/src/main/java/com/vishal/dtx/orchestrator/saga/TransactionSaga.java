@@ -1,42 +1,55 @@
 package com.vishal.dtx.orchestrator.saga;
 
-import com.vishal.dtx.orchestrator.model.TransactionEvent;
+import com.vishal.dtx.common.constants.KafkaTopics;
+import com.vishal.dtx.common.model.TransactionEvent;
+import com.vishal.dtx.common.saga.SagaState;
+import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
+import org.springframework.kafka.core.KafkaTemplate;
 import org.springframework.stereotype.Component;
-
-import java.util.concurrent.ConcurrentHashMap;
 
 @Slf4j
 @Component
+@RequiredArgsConstructor
 public class TransactionSaga {
 
-    private final ConcurrentHashMap<String, SagaState> sagaStore = new ConcurrentHashMap<>();
+    private final KafkaTemplate<String, TransactionEvent> kafkaTemplate;
 
     public void handle(TransactionEvent event) {
-        sagaStore.putIfAbsent(event.getTransactionId(), SagaState.STARTED);
 
-        SagaState state = sagaStore.get(event.getTransactionId());
+        switch (event.getStatus()) {
 
-        switch (state) {
-            case STARTED -> reserveInventory(event);
-            case INVENTORY_RESERVED -> processPayment(event);
-            case PAYMENT_COMPLETED -> completeTransaction(event);
-            default -> log.warn("Saga ended or invalid state");
+            case CREATED -> {
+                log.info("Saga → CREATED, requesting inventory");
+                event.setStatus(SagaState.INVENTORY_RESERVED);
+                kafkaTemplate.send(
+                        KafkaTopics.INVENTORY_EVENTS,
+                        event.getTransactionId(),
+                        event
+                );
+            }
+
+            case INVENTORY_RESERVED -> {
+                log.info("Saga → INVENTORY_RESERVED, requesting payment");
+                event.setStatus(SagaState.PAYMENT_COMPLETED);
+                kafkaTemplate.send(
+                        KafkaTopics.PAYMENT_EVENTS,
+                        event.getTransactionId(),
+                        event
+                );
+            }
+
+            case PAYMENT_COMPLETED -> {
+                log.info("Saga → PAYMENT_COMPLETED, transaction COMPLETED");
+                event.setStatus(SagaState.COMPLETED);
+            }
+
+            case FAILED -> {
+                log.warn("Saga → FAILED, compensation required");
+                // future: compensation logic
+            }
+
+            default -> log.info("Saga ignoring state {}", event.getStatus());
         }
-    }
-
-    private void reserveInventory(TransactionEvent event) {
-        log.info("Reserving inventory for {}", event.getTransactionId());
-        sagaStore.put(event.getTransactionId(), SagaState.INVENTORY_RESERVED);
-    }
-
-    private void processPayment(TransactionEvent event) {
-        log.info("Processing payment for {}", event.getTransactionId());
-        sagaStore.put(event.getTransactionId(), SagaState.PAYMENT_COMPLETED);
-    }
-
-    private void completeTransaction(TransactionEvent event) {
-        log.info("Transaction completed {}", event.getTransactionId());
-        sagaStore.put(event.getTransactionId(), SagaState.COMPLETED);
     }
 }

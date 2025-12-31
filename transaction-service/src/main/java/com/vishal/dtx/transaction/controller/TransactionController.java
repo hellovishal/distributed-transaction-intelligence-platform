@@ -1,6 +1,5 @@
 package com.vishal.dtx.transaction.controller;
 
-import com.vishal.dtx.transaction.model.TransactionEvent;
 import com.vishal.dtx.transaction.service.TransactionProducer;
 import lombok.RequiredArgsConstructor;
 import org.springframework.web.bind.annotation.*;

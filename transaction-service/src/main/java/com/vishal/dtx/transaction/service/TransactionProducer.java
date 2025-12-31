@@ -1,6 +1,5 @@
 package com.vishal.dtx.transaction.service;
 
-import com.vishal.dtx.transaction.model.TransactionEvent;
 import lombok.RequiredArgsConstructor;
 import org.springframework.kafka.core.KafkaTemplate;
 import org.springframework.stereotype.Service;
