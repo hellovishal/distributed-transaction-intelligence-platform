@@ -8,19 +8,28 @@ import lombok.extern.slf4j.Slf4j;
 import org.springframework.kafka.annotation.KafkaListener;
 import org.springframework.stereotype.Component;
 
+import java.util.Set;
+import java.util.concurrent.ConcurrentHashMap;
+
 @Slf4j
 @Component
 @RequiredArgsConstructor
 public class InventoryEventListener {
 
     private final InventoryEventProducer producer;
+    private final Set<String> processed = ConcurrentHashMap.newKeySet();
 
     @KafkaListener(
             topics = "transaction-events",
             groupId = "inventory-service-group"
     )
     public void onEvent(TransactionEvent event) {
+        String key = event.getTransactionId() + ":" + event.getStatus();
 
+        if (!processed.add(key)) {
+            log.warn("Duplicate event ignored | {}", key);
+            return;
+        }
         switch (event.getStatus().toString()) {
 
             case "CREATED" -> {

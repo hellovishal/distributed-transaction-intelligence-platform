@@ -8,12 +8,16 @@ import lombok.extern.slf4j.Slf4j;
 import org.springframework.kafka.annotation.KafkaListener;
 import org.springframework.stereotype.Component;
 
+import java.util.Set;
+import java.util.concurrent.ConcurrentHashMap;
+
 @Slf4j
 @Component
 @RequiredArgsConstructor
 public class TransactionEventListener {
 
     private final TransactionProducer producer;
+    private final Set<String> processed = ConcurrentHashMap.newKeySet();
 
     @KafkaListener(
             topics = "transaction-events",
@@ -26,8 +30,12 @@ public class TransactionEventListener {
                 event.getTransactionId(),
                 event.getStatus()
         );
+        String key = event.getTransactionId() + ":" + event.getStatus();
 
-        // 🔥 THIS IS THE MISSING PIECE
+        if (!processed.add(key)) {
+            log.warn("Duplicate event ignored | {}", key);
+            return;
+        }
         if ("STARTED".equals(event.getStatus().toString())) {
 
             event.setStatus(SagaState.CREATED);

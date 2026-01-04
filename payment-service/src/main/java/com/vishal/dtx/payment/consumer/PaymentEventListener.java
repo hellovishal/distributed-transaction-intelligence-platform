@@ -6,7 +6,12 @@ import com.vishal.dtx.payment.producer.PaymentEventProducer;
 import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
 import org.springframework.kafka.annotation.KafkaListener;
+import org.springframework.kafka.annotation.RetryableTopic;
+import org.springframework.retry.annotation.Backoff;
 import org.springframework.stereotype.Component;
+
+import java.util.Set;
+import java.util.concurrent.ConcurrentHashMap;
 
 @Slf4j
 @Component
@@ -14,13 +19,35 @@ import org.springframework.stereotype.Component;
 public class PaymentEventListener {
 
     private final PaymentEventProducer producer;
+
+    /**
+     * Idempotency store:
+     * transactionId + status
+     */
+    private final Set<String> processed = ConcurrentHashMap.newKeySet();
+
+    @RetryableTopic(
+            attempts = "3",
+            backoff = @Backoff(delay = 2000, multiplier = 2.0),
+            autoCreateTopics = "true",
+            dltTopicSuffix = "-DLT"
+    )
     @KafkaListener(
             topics = "transaction-events",
             groupId = "payment-service-group"
     )
     public void onEvent(TransactionEvent event) {
 
-        if (!"INVENTORY_RESERVED".equals(event.getStatus().toString())) {
+        // Only act on INVENTORY_RESERVED
+        if (!"INVENTORY_RESERVED".equals(event.getStatus())) {
+            return;
+        }
+
+        String key = event.getTransactionId() + ":" + event.getStatus();
+
+        // Idempotency check
+        if (!processed.add(key)) {
+            log.warn("Duplicate payment event ignored | {}", key);
             return;
         }
 
@@ -29,7 +56,7 @@ public class PaymentEventListener {
                 event.getTransactionId()
         );
 
-        // 🔥 Simulate failure (e.g. random or amount-based)
+        // Simulated failure condition
         if (event.getAmount() > 400) {
 
             log.warn(
@@ -37,14 +64,13 @@ public class PaymentEventListener {
                     event.getTransactionId()
             );
 
-            event.setStatus(SagaState.PAYMENT_FAILED);
+            event.setStatus(SagaState.valueOf("PAYMENT_FAILED"));
             producer.publish(event);
             return;
         }
 
-        // Success
-        event.setStatus(SagaState.PAYMENT_COMPLETED);
+        // Success path
+        event.setStatus(SagaState.valueOf("PAYMENT_COMPLETED"));
         producer.publish(event);
     }
-
 }
