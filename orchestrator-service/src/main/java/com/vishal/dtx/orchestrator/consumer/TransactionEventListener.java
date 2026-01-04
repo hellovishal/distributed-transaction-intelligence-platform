@@ -1,10 +1,7 @@
-package com.vishal.dtx.transaction.consumer;
+package com.vishal.dtx.orchestrator.consumer;
 
-import com.vishal.dtx.transaction.model.TransactionEvent;
-import com.vishal.dtx.transaction.service.TransactionProducer;
-import lombok.AllArgsConstructor;
-import lombok.Data;
-import lombok.NoArgsConstructor;
+import com.vishal.dtx.common.model.TransactionEvent;
+import com.vishal.dtx.orchestrator.saga.TransactionSaga;
 import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
 import org.springframework.kafka.annotation.KafkaListener;
@@ -15,32 +12,20 @@ import org.springframework.stereotype.Component;
 @RequiredArgsConstructor
 public class TransactionEventListener {
 
-    private final TransactionProducer producer;
+    private final TransactionSaga saga;
 
     @KafkaListener(
             topics = "transaction-events",
-            groupId = "transaction-service-group"
+            groupId = "orchestrator-group"
     )
     public void onEvent(TransactionEvent event) {
 
-        if (event.getStatus() == SagaState.STARTED) {
-            log.info("Transaction service processing STARTED for {}", event.getTransactionId());
+        log.info(
+                "Orchestrator received event | txId={} | status={}",
+                event.getTransactionId(),
+                event.getStatus()
+        );
 
-            // Simulate persistence / validation
-            event.setStatus(SagaState.CREATED);
-
-            producer.publish(event);
-        }
-    }
-
-    @Data
-    @NoArgsConstructor
-    @AllArgsConstructor
-    public static class TransactionEvent {
-
-        private String transactionId;
-        private String userId;
-        private double amount;
-        private String status; // CREATED
+        saga.handle(event);
     }
 }

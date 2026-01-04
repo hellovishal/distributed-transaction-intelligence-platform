@@ -10,10 +10,8 @@
     </parent>
 
     <artifactId>common</artifactId>
-    <name>Common Contracts</name>
 
     <dependencies>
-        <!-- Lombok for DTOs -->
         <dependency>
             <groupId>org.projectlombok</groupId>
             <artifactId>lombok</artifactId>

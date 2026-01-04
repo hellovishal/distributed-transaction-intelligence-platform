@@ -1,3 +1,4 @@
+<?xml version="1.0" encoding="UTF-8"?>
 <project xmlns="http://maven.apache.org/POM/4.0.0">
 
 	<modelVersion>4.0.0</modelVersion>
@@ -9,11 +10,10 @@
 	</parent>
 
 	<artifactId>transaction-service</artifactId>
-	<name>Transaction Service</name>
 
 	<dependencies>
 
-		<!-- Kafka only (NO WEB) -->
+		<!-- Kafka only -->
 		<dependency>
 			<groupId>org.springframework.kafka</groupId>
 			<artifactId>spring-kafka</artifactId>
@@ -23,6 +23,7 @@
 		<dependency>
 			<groupId>com.vishal.dtx</groupId>
 			<artifactId>common</artifactId>
+			<version>${project.version}</version>
 		</dependency>
 
 		<!-- Actuator -->
@@ -44,6 +45,10 @@
 			<artifactId>spring-boot-starter-test</artifactId>
 			<scope>test</scope>
 		</dependency>
+		<dependency>
+			<groupId>com.fasterxml.jackson.core</groupId>
+			<artifactId>jackson-databind</artifactId>
+		</dependency>
 
 	</dependencies>
 
@@ -52,11 +57,6 @@
 			<plugin>
 				<groupId>org.springframework.boot</groupId>
 				<artifactId>spring-boot-maven-plugin</artifactId>
-				<configuration>
-					<mainClass>
-						com.vishal.dtx.transaction.TransactionServiceApplication
-					</mainClass>
-				</configuration>
 			</plugin>
 		</plugins>
 	</build>

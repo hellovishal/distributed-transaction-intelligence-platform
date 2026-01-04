@@ -1,12 +1,59 @@
+############################
 # Maven
+############################
 target/
+**/target/
+
+############################
+# Java
+############################
+*.class
 *.log
 
-# IDEs
-.idea/
-.vscode/
-*.iml
+############################
+# Spring Boot
+############################
+*.pid
+spring.log
 
+############################
+# IDEs
+############################
+# IntelliJ IDEA
+.idea/
+*.iml
+*.iws
+*.ipr
+
+# VS Code
+.vscode/
+
+# Eclipse
+.project
+.classpath
+.settings/
+
+############################
 # OS
+############################
 .DS_Store
 Thumbs.db
+
+############################
+# Logs
+############################
+logs/
+**/logs/
+
+############################
+# Environment / Secrets
+############################
+.env
+.env.*
+application-local.yml
+application-local.properties
+
+############################
+# Docker
+############################
+docker-data/

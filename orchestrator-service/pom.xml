@@ -1,3 +1,4 @@
+<?xml version="1.0" encoding="UTF-8"?>
 <project xmlns="http://maven.apache.org/POM/4.0.0">
 
     <modelVersion>4.0.0</modelVersion>
@@ -8,9 +9,7 @@
         <version>1.0-SNAPSHOT</version>
     </parent>
 
-
     <artifactId>orchestrator-service</artifactId>
-    <name>Orchestrator Service</name>
 
     <dependencies>
 
@@ -30,14 +29,14 @@
         <dependency>
             <groupId>com.vishal.dtx</groupId>
             <artifactId>common</artifactId>
+            <version>${project.version}</version>
         </dependency>
 
-        <!-- Observability -->
+        <!-- Actuator -->
         <dependency>
             <groupId>org.springframework.boot</groupId>
             <artifactId>spring-boot-starter-actuator</artifactId>
         </dependency>
-
 
         <!-- Lombok -->
         <dependency>
@@ -60,11 +59,6 @@
             <plugin>
                 <groupId>org.springframework.boot</groupId>
                 <artifactId>spring-boot-maven-plugin</artifactId>
-                <configuration>
-                    <mainClass>
-                        com.vishal.dtx.orchestrator.OrchestratorApplication
-                    </mainClass>
-                </configuration>
             </plugin>
         </plugins>
     </build>

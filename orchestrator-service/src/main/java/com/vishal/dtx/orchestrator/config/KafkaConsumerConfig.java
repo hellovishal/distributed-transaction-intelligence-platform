@@ -1,6 +1,6 @@
 package com.vishal.dtx.orchestrator.config;
 
-import com.vishal.dtx.orchestrator.model.TransactionEvent;
+import com.vishal.dtx.common.model.TransactionEvent;
 import org.apache.kafka.clients.consumer.ConsumerConfig;
 import org.apache.kafka.common.serialization.StringDeserializer;
 import org.springframework.context.annotation.Bean;
