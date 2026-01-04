@@ -1,6 +1,20 @@
 version: "3.8"
 
 services:
+  redis:
+    image: redis:7
+    ports:
+      - "6379:6379"
+
+  postgres:
+    image: postgres:15
+    environment:
+      POSTGRES_DB: saga_db
+      POSTGRES_USER: saga
+      POSTGRES_PASSWORD: saga
+    ports:
+      - "5432:5432"
+
   zookeeper:
     image: confluentinc/cp-zookeeper:7.5.0
     container_name: zookeeper

@@ -20,10 +20,7 @@ public class PaymentEventListener {
 
     private final PaymentEventProducer producer;
 
-    /**
-     * Idempotency store:
-     * transactionId + status
-     */
+    // Idempotency store
     private final Set<String> processed = ConcurrentHashMap.newKeySet();
 
     @RetryableTopic(
@@ -38,15 +35,14 @@ public class PaymentEventListener {
     )
     public void onEvent(TransactionEvent event) {
 
-        // Only act on INVENTORY_RESERVED
-        if (!"INVENTORY_RESERVED".equals(event.getStatus())) {
+        if (!"INVENTORY_RESERVED".equals(event.getStatus().toString())) {
             return;
         }
 
         String key = event.getTransactionId() + ":" + event.getStatus();
 
-        // Idempotency check
-        if (!processed.add(key)) {
+        // ⚠️ IMPORTANT: idempotency AFTER retries succeed
+        if (processed.contains(key)) {
             log.warn("Duplicate payment event ignored | {}", key);
             return;
         }
@@ -56,21 +52,22 @@ public class PaymentEventListener {
                 event.getTransactionId()
         );
 
-        // Simulated failure condition
+        // for testing DLQ logic implementation
+        if (event.getAmount() == 999) {
+            log.error("Payment gateway timeout | txId={}", event.getTransactionId());
+            throw new RuntimeException("Payment gateway timeout");
+        }
+
         if (event.getAmount() > 400) {
-
-            log.warn(
-                    "Payment FAILED | txId={}",
-                    event.getTransactionId()
-            );
-
+            log.warn("Payment DECLINED | txId={}", event.getTransactionId());
             event.setStatus(SagaState.valueOf("PAYMENT_FAILED"));
             producer.publish(event);
+            processed.add(key);
             return;
         }
 
-        // Success path
         event.setStatus(SagaState.valueOf("PAYMENT_COMPLETED"));
         producer.publish(event);
+        processed.add(key);
     }
 }
